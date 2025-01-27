@@ -28,15 +28,10 @@ export const typeDefs = gql`
 
   # Queries
   type Query {
-    # Usuários
-    getUser(id: ID!): User!
-    users: [User!]!  # Adicionando a query users
-
-    # Gestação
+    user(id: ID!): User!
+    users: [User!]! 
     gestacaoPorUsuario(usuarioId: ID!): Gestacao!
-    
-    # Dados de Gravidez
-    dadosGravidezPorGestacao(gestacaoId: ID!): [DadosGravidez!]!
+    dadosGravidezPorUsuario(gestacaoId: ID!): [DadosGravidez!]!
   }
 
   # Mutations
@@ -47,7 +42,7 @@ export const typeDefs = gql`
     updateGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
 
     # Dados de Gravidez
-    createDadosGravidez(
+    createGravidez(
       gestacaoId: ID!
       semana: Int!
       peso: Float!

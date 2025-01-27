@@ -19,7 +19,7 @@ const userResolver = {
             throw new Error('Erro ao buscar usuários');
           }
         },
-/*
+
         user: async (_, { id }) => {
           try {
             const user = await User.findById(id); 
@@ -31,7 +31,6 @@ const userResolver = {
             throw new Error('Erro ao buscar o usuário');
           }
         },
-        */
     },
 
     Mutation: {    
@@ -73,7 +72,7 @@ const userResolver = {
 
 const gestacaoResolver = {
     Query: {
-        /*
+
         gestacaoPorUsuario: async (_, { usuarioId }) => {
             try {
                 const gestacao = await Gestacao.findOne({ usuarioId });
@@ -85,7 +84,6 @@ const gestacaoResolver = {
                 throw new GraphQLError('Erro ao buscar informações de gestação');
             }
         },
-        */
     },
     Mutation: {
         createGestacao: async (_, { usuarioId, ultimaMenstruacao }) => {
@@ -143,7 +141,7 @@ const gestacaoResolver = {
 
 const gravidezResolver = {
     Query: {
-        /*
+        
         dadosGravidezPorUsuario: async (_, { usuarioId }) => {
             try {
                 const dados = await Gravidez.find({ usuarioId });
@@ -155,10 +153,10 @@ const gravidezResolver = {
                 throw new GraphQLError('Erro ao buscar dados de gravidez');
             }
         },
-        */
+        
     },
     Mutation: {
-        /*
+
         createGravidez: async (_, { gestacaoId, semana, peso, comprimento, dataRegistro }) => {
             try {
                 const newGravidez = new Gravidez({ gestacaoId, semana, peso, comprimento, dataRegistro });
@@ -168,17 +166,6 @@ const gravidezResolver = {
                 throw new GraphQLError('Erro ao criar dados de gravidez');
             }
         },
-        
-
-        createLembreteSemana: async (_, { usuarioId }) => {
-            try {
-                pubsub.publish(`LEMBRETE_SEMANA_${usuarioId}`, { lembreteSemana: true });
-                return true;
-            } catch (err) {
-                throw new GraphQLError('Erro ao criar lembrete de semana');
-            }
-        },
-         */
     },
 };
 
