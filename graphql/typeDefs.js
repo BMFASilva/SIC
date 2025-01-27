@@ -1,66 +1,58 @@
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
-  # Definindo os tipos para as entidades da aplicação
+  type User {
+    id: ID!
+    username: String!
+    password: String!
+    dataRegisto: String!
+  }
 
-type User {
-  id: ID!
-  nome: String!
-  senha: String!
-  dataRegisto: String!
-}
+  type Gestacao {
+    id: ID!
+    usuarioId: ID!
+    ultimaMenstruacao: String!
+    dataInicio: String!
+    duracaoEstimativa: Int!
+    dataTerminoPrevisto: String!
+  }
 
-type Gestacao {
-  id: ID!
-  usuarioId: ID!
-  dataInicio: String!
-  duracaoEstimativa: Int!
-  dataTerminoPrevisto: String!
-}
+  type DadosGravidez {
+    id: ID!
+    gestacaoId: ID!
+    semana: Int!
+    peso: Float!
+    comprimento: Float!
+    dataRegistro: String!
+  }
 
-type GestacaoRegistro {
-  id: ID!
-  gestacaoId: ID!
-  semana: Int!
-  peso: Float!
-  comprimento: Float!
-  dataRegistro: String!
-}
+  # Queries
+  type Query {
+    # Usuários
+    getUser(id: ID!): User!
+    users: [User!]!  # Adicionando a query users
 
-# Definindo as operações (queries e mutations)
+    # Gestação
+    gestacaoPorUsuario(usuarioId: ID!): Gestacao!
+    
+    # Dados de Gravidez
+    dadosGravidezPorGestacao(gestacaoId: ID!): [DadosGravidez!]!
+  }
 
-# Consultas (queries)
+  # Mutations
+  type Mutation {
+    createUser(username: String!, password: String!): User!
+    login(username: String!, password: String!): String!
+    createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
+    updateGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
 
-type Query {
-  users: [User]
-  user(id: ID!): User
-  gestaos: [Gestacao]
-  gestacao(id: ID!): Gestacao
-  gestacaoRegistros: [GestacaoRegistro]
-  gestacaoRegistro(id: ID!): GestacaoRegistro
-}
-
-# Mutations (operações de escrita)
-
-type Mutation {
-  # Criar um novo usuário
-  createUser(nome: String!, senha: String!): User
-
-  # Atualizar informações do usuário
-  updateUser(id: ID!, nome: String, senha: String): User
-
-  # Criar uma nova gestação
-  createGestacao(usuarioId: ID!, dataInicio: String!, duracaoEstimativa: Int!): Gestacao
-
-  updateGestacao(id: ID!, dataInicio: String, duracaoEstimativa: Int): Gestacao
-
-  createGestacaoRegistro(gestacaoId: ID!, semana: Int!, peso: Float!, comprimento: Float!): GestacaoRegistro
-
-  updateGestacaoRegistro(id: ID!, semana: Int, peso: Float, comprimento: Float): GestacaoRegistro
-}
-
-type Subscription {
-  gestacaoCriada: Gestacao
-}
-
+    # Dados de Gravidez
+    createDadosGravidez(
+      gestacaoId: ID!
+      semana: Int!
+      peso: Float!
+      comprimento: Float!
+      dataRegistro: String!
+    ): DadosGravidez!
+  }
 `;
