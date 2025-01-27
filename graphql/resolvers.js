@@ -35,19 +35,23 @@ const userResolver = {
 
     Mutation: {    
         createUser: async (_, { username, password }) => {
-          try {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-            const newUser = new User({
-              username,
-              password: hashedPassword,
-            });
-            await newUser.save(); 
-            return newUser;
-          } catch (err) {
-            throw new Error('Erro ao criar o usuário');
-          }
-        },
+            try {
+              const salt = await bcrypt.genSalt(10);
+              const hashedPassword = await bcrypt.hash(password, salt);
+              const newUser = new User({
+                username,
+                password: hashedPassword,
+              });
+          
+              console.log('Dados do novo usuário:', newUser);  // Verifique os dados antes de salvar
+          
+              await newUser.save();
+              return newUser;
+            } catch (err) {
+              console.error('Erro ao criar o usuário:', err);  // Log de erro mais detalhado
+              throw new Error('Erro ao criar o usuário');
+            }
+          },
 
         login: async (_, { username, password }) => {
           try {

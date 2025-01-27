@@ -1,11 +1,17 @@
 import mongoose from 'mongoose';
 
-const UserSchema = new mongoose.Schema({
-  id: { type: mongoose.Schema.Types.ObjectId, default: mongoose.Types.ObjectId },  // ID único
-  nome: { type: String, required: true },  // Nome do usuário
-  senha: { type: String, required: true },  // Senha do usuário
-  dataRegisto: { type: Date, default: Date.now },  // Data de registo, com valor padrão sendo a data atual
-});
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true, 
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+}, { timestamps: true });
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model('User', userSchema);
+
 export default User;
