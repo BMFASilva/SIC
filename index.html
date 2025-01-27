@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Client</title>
+</head>
+
+<body>
+    <h1>GraphQL Client</h1>
+    <div>
+        <h2>Mensagem</h2>
+        <button onclick="fetchUsers()">Fetch Users</button>
+        <p id="users"></p>
+    </div>
+    <div>
+        <h2>Pessoa</h2>
+        <button onclick="fetchPosts()">Fetch Posts</button>
+        <p id="posts"></p>
+    </div>
+
+    <div>
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="teresaterroso"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" value="adminpasswd"><br><br>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div>
+        <h2>Create Post</h2>
+        <label for="postTitle">Title:</label>
+        <input type="text" id="postTitle" name="postTitle"><br><br>
+        <label for="postContent">Content:</label>
+        <textarea id="postContent" name="postContent"></textarea><br><br>
+        <button onclick="createPost()">Create Post</button>
+    </div>
+
+    <h1>Subscrições GraphQL com WebSockets</h1>
+    <div id="data"></div>
+
+    <!-- Adicionar a biblioteca graphql-ws -->
+    <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.10.0/umd/graphql-ws.min.js"></script>
+
+    <script>
+        async function fetchUsers() {
+            const query = `
+                query Query {
+                    users {
+                        id
+                        username
+                    }
+                }
+            `;
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query })
+            });
+            const result = await response.json();
+            console.log(result.data);
+            // convert array to string of users
+            document.getElementById('users').innerText = '';
+            result.data.users.forEach(user => {
+                document.getElementById('users').innerText += `ID: ${user.id}, Username: ${user.username}\n`;
+            });
+        }
+
+        async function fetchPosts() {
+            const query = `
+            query Query {
+                posts {
+                        title
+                        content
+                        author {
+                            username
+                        }
+                    }
+                }
+            `;
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query })
+            });
+            const result = await response.json();
+            console.log(result);
+            // convert array to table of posts
+            document.getElementById('posts').innerText = '';
+            // create table
+            let table = document.createElement('table');
+            let tr = document.createElement('tr');
+            let th1 = document.createElement('th');
+            th1.innerText = 'Title';
+            let th2 = document.createElement('th');
+            th2.innerText = 'Content';
+            let th3 = document.createElement('th');
+            th3.innerText = 'Author';
+            tr.appendChild(th1);
+            tr.appendChild(th2);
+            tr.appendChild(th3);
+            table.appendChild(tr);
+            result.data.posts.forEach(post => {
+                // create row
+                let tr2 = document.createElement('tr');
+                let td1 = document.createElement('td');
+                td1.innerText = post.title;
+                let td2 = document.createElement('td');
+                td2.innerText = post.content;
+                let td3 = document.createElement('td');
+                td3.innerText = post.author.username;
+                tr2.appendChild(td1);
+                tr2.appendChild(td2);
+                tr2.appendChild(td3);
+                table.appendChild(tr2);
+                //document.getElementById('posts').innerText += `Title: ${post.title}, Content: ${post.content}, Author: ${post.author.username}\n`;
+            });
+            document.getElementById('posts').appendChild(table);
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const query = `
+                mutation Mutation($username: String!, $password: String!) {
+                    login(username: $username, password: $password)
+                }
+            `;
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query, variables: { username, password } })
+            });
+            const result = await response.json();
+            localStorage.setItem('token', result.data.login);
+            console.log(result);
+        }
+
+        async function createPost() {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const query = `
+                    mutation Mutation($title: String!, $content: String!) {
+  createPost(title: $title, content: $content) {
+    title
+    content
+    author {
+      username
+    }
+    id
+  }
+}
+            `;
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ query, variables: { title, content } })
+            });
+            const result = await response.json();
+            //localStorage.setItem('token', result.data.login);
+            console.log(result);
+        }
+
+        // WebSocket CLIENT
+        // Inicializar o cliente GraphQL WebSocket
+        const url = 'ws://localhost:4000/graphql'; // Substituir pelo URL do teu se
+
+        const client = graphqlWs.createClient({
+            url: url,
+        });
+        // Query de subscrição
+        const SUBSCRIPTION_QUERY = `
+            subscription {
+                novoPostAdicionado {
+                id
+        title
+            content
+      }
+    }
+            `;
+        // Subscrição ativa
+        client.subscribe(
+            {
+                query: SUBSCRIPTION_QUERY,
+            },
+            {
+                next: (data) => {
+                    const mensagem = data.data.novoPostAdicionado;
+                    document.getElementById('data').innerText = `
+            Mensagem nova:
+            Conteúdo: ${mensagem.title}
+            Autor: ${mensagem.content}
+        `;
+                },
+                error: (err) => console.error('Erro na subscrição:', err),
+                complete: () => console.log('Subscrição terminada'),
+            }
+        );
+    </script>
+</body>
+
+</html>

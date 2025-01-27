@@ -1,7 +1,7 @@
 {
   "name": "ficha5",
   "version": "1.0.0",
-  "type":"module",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,10 +12,16 @@
   "description": "",
   "dependencies": {
     "@apollo/server": "^4.11.3",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "graphql": "^16.10.0",
     "graphql-subscriptions": "^3.0.0",
+    "graphql-tag": "^2.12.6",
     "graphql-ws": "^6.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
     "ws": "^8.18.0"
   }
 }
