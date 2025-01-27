@@ -1,213 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GraphQL Client</title>
+    <title>Pregnancy Tracker</title>
 </head>
-
 <body>
-    <h1>GraphQL Client</h1>
-    <div>
-        <h2>Mensagem</h2>
-        <button onclick="fetchUsers()">Fetch Users</button>
-        <p id="users"></p>
-    </div>
-    <div>
-        <h2>Pessoa</h2>
-        <button onclick="fetchPosts()">Fetch Posts</button>
-        <p id="posts"></p>
-    </div>
-
-    <div>
-        <h2>Login</h2>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" value="teresaterroso"><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" value="adminpasswd"><br><br>
-        <button onclick="login()">Login</button>
+    <!-- Login Page -->
+    <div id="login-page">
+        <h1>Welcome to Pregnancy Tracker</h1>
+        <p>Login to continue or create an account if you're new.</p>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Username" required><br>
+            <input type="password" id="password" placeholder="Password" required><br>
+            <button type="button" onclick="login()">Login</button>
+        </form>
+        <p>Don't have an account? <a href="#" onclick="showCreateAccount()">Create one here.</a></p>
     </div>
 
-    <div>
-        <h2>Create Post</h2>
-        <label for="postTitle">Title:</label>
-        <input type="text" id="postTitle" name="postTitle"><br><br>
-        <label for="postContent">Content:</label>
-        <textarea id="postContent" name="postContent"></textarea><br><br>
-        <button onclick="createPost()">Create Post</button>
+    <!-- Create Account Page -->
+    <div id="create-account-page" style="display: none;">
+        <h1>Create an Account</h1>
+        <form id="create-account-form">
+            <input type="text" id="new-username" placeholder="Username" required><br>
+            <input type="password" id="new-password" placeholder="Password" required><br>
+            <button type="button" onclick="createAccount()">Create Account</button>
+        </form>
+        <p>Already have an account? <a href="#" onclick="showLogin()">Login here.</a></p>
+        <button onclick="showPage('main-page')">Back to Main Page</button>
     </div>
 
-    <h1>Subscrições GraphQL com WebSockets</h1>
-    <div id="data"></div>
+    <!-- Main Page -->
+    <div id="main-page" style="display: none;">
+        <h1>Main Page</h1>
+        <nav>
+            <a href="#" onclick="showPage('results-page')">View Results</a>
+            <a href="#" onclick="showPage('calculate-page')">Calculate Results</a>
+            <a href="#" onclick="showPage('expectancy-page')">Baby's Born Expectancy</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </nav>
+        <p>Use the navigation bar above to explore the application.</p>
+    </div>
 
-    <!-- Adicionar a biblioteca graphql-ws -->
-    <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.10.0/umd/graphql-ws.min.js"></script>
+    <!-- View Results Page -->
+    <div id="results-page" style="display: none;">
+        <h1>Your Progress Results</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Weight (kg)</th>
+                    <th>Length (cm)</th>
+                    <th>Date Recorded</th>
+                </tr>
+            </thead>
+            <tbody id="results-table">
+                <tr>
+                    <td>12</td>
+                    <td>0.5</td>
+                    <td>5.5</td>
+                    <td>2025-01-10</td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td>0.7</td>
+                    <td>6.2</td>
+                    <td>2025-01-17</td>
+                </tr>
+            </tbody>
+        </table>
+        <button onclick="showPage('main-page')">Back to Main Page</button>
+    </div>
+
+    <!-- Calculate Results Page -->
+    <div id="calculate-page" style="display: none;">
+        <h1>Calculate Results</h1>
+        <div>
+            <h2>Enter Baby's Data</h2>
+            <form>
+                <label>Week: <input type="number" id="week-input" min="1" required></label><br>
+                <label>Weight (kg): <input type="number" id="weight-input" min="0" step="0.1" required></label><br>
+                <label>Length (cm): <input type="number" id="length-input" min="0" step="0.1" required></label><br>
+                <button type="button" onclick="calculateResults()">Calculate</button>
+            </form>
+        </div>
+        <div>
+            <div id="baby-info">
+                <h3>Baby's Info</h3>
+                <p><strong>Week:</strong> <span id="baby-week"></span></p>
+                <p><strong>Weight:</strong> <span id="baby-weight"></span> kg</p>
+                <p><strong>Length:</strong> <span id="baby-length"></span> cm</p>
+            </div>
+            <div id="expected-info">
+                <h3>Estimated Values</h3>
+                <p><strong>Estimated Weight:</strong> <span id="estimated-weight"></span> kg</p>
+                <p><strong>Estimated Length:</strong> <span id="estimated-length"></span> cm</p>
+            </div>
+        </div>
+        <button onclick="showPage('main-page')">Back to Main Page</button>
+    </div>
+
+    <!-- Baby's Born Expectancy Page -->
+    <div id="expectancy-page" style="display: none;">
+        <h1>Baby's Born Expectancy</h1>
+        <form>
+            <label>Last Menstruation Date: <input type="date" id="lmp-date" required></label><br>
+            <button type="button" onclick="calculateDueDate()">Calculate</button>
+        </form>
+        <p><strong>Estimated Due Date:</strong> <span id="due-date"></span></p>
+        <button onclick="showPage('main-page')">Back to Main Page</button>
+    </div>
 
     <script>
-        async function fetchUsers() {
-            const query = `
-                query Query {
-                    users {
-                        id
-                        username
-                    }
-                }
-            `;
-            const response = await fetch('http://localhost:4000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query })
-            });
-            const result = await response.json();
-            console.log(result.data);
-            // convert array to string of users
-            document.getElementById('users').innerText = '';
-            result.data.users.forEach(user => {
-                document.getElementById('users').innerText += `ID: ${user.id}, Username: ${user.username}\n`;
-            });
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('div[id$="-page"]');
+            pages.forEach(page => page.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
         }
 
-        async function fetchPosts() {
-            const query = `
-            query Query {
-                posts {
-                        title
-                        content
-                        author {
-                            username
-                        }
-                    }
-                }
-            `;
-            const response = await fetch('http://localhost:4000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query })
-            });
-            const result = await response.json();
-            console.log(result);
-            // convert array to table of posts
-            document.getElementById('posts').innerText = '';
-            // create table
-            let table = document.createElement('table');
-            let tr = document.createElement('tr');
-            let th1 = document.createElement('th');
-            th1.innerText = 'Title';
-            let th2 = document.createElement('th');
-            th2.innerText = 'Content';
-            let th3 = document.createElement('th');
-            th3.innerText = 'Author';
-            tr.appendChild(th1);
-            tr.appendChild(th2);
-            tr.appendChild(th3);
-            table.appendChild(tr);
-            result.data.posts.forEach(post => {
-                // create row
-                let tr2 = document.createElement('tr');
-                let td1 = document.createElement('td');
-                td1.innerText = post.title;
-                let td2 = document.createElement('td');
-                td2.innerText = post.content;
-                let td3 = document.createElement('td');
-                td3.innerText = post.author.username;
-                tr2.appendChild(td1);
-                tr2.appendChild(td2);
-                tr2.appendChild(td3);
-                table.appendChild(tr2);
-                //document.getElementById('posts').innerText += `Title: ${post.title}, Content: ${post.content}, Author: ${post.author.username}\n`;
-            });
-            document.getElementById('posts').appendChild(table);
-        }
-
-        async function login() {
+        function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const query = `
-                mutation Mutation($username: String!, $password: String!) {
-                    login(username: $username, password: $password)
-                }
-            `;
-            const response = await fetch('http://localhost:4000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query, variables: { username, password } })
-            });
-            const result = await response.json();
-            localStorage.setItem('token', result.data.login);
-            console.log(result);
-        }
-
-        async function createPost() {
-            const title = document.getElementById('postTitle').value;
-            const content = document.getElementById('postContent').value;
-            const query = `
-                    mutation Mutation($title: String!, $content: String!) {
-  createPost(title: $title, content: $content) {
-    title
-    content
-    author {
-      username
-    }
-    id
-  }
-}
-            `;
-            const response = await fetch('http://localhost:4000/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ query, variables: { title, content } })
-            });
-            const result = await response.json();
-            //localStorage.setItem('token', result.data.login);
-            console.log(result);
-        }
-
-        // WebSocket CLIENT
-        // Inicializar o cliente GraphQL WebSocket
-        const url = 'ws://localhost:4000/graphql'; // Substituir pelo URL do teu se
-
-        const client = graphqlWs.createClient({
-            url: url,
-        });
-        // Query de subscrição
-        const SUBSCRIPTION_QUERY = `
-            subscription {
-                novoPostAdicionado {
-                id
-        title
-            content
-      }
-    }
-            `;
-        // Subscrição ativa
-        client.subscribe(
-            {
-                query: SUBSCRIPTION_QUERY,
-            },
-            {
-                next: (data) => {
-                    const mensagem = data.data.novoPostAdicionado;
-                    document.getElementById('data').innerText = `
-            Mensagem nova:
-            Conteúdo: ${mensagem.title}
-            Autor: ${mensagem.content}
-        `;
-                },
-                error: (err) => console.error('Erro na subscrição:', err),
-                complete: () => console.log('Subscrição terminada'),
+            if (username === "test" && password === "1234") {
+                alert('Login successful!');
+                showPage('main-page');
+            } else {
+                alert('Invalid username or password!');
             }
-        );
+        }
+
+        function createAccount() {
+            const newUsername = document.getElementById('new-username').value;
+            const newPassword = document.getElementById('new-password').value;
+            if (newUsername && newPassword) {
+                alert('Account created successfully!');
+                showPage('login-page');
+            } else {
+                alert('Please fill in all fields!');
+            }
+        }
+
+        function logout() {
+            alert('Logged out successfully!');
+            showPage('login-page');
+        }
+
+        function calculateResults() {
+            const week = document.getElementById('week-input').value;
+            const weight = document.getElementById('weight-input').value;
+            const length = document.getElementById('length-input').value;
+            document.getElementById('baby-week').textContent = week;
+            document.getElementById('baby-weight').textContent = weight;
+            document.getElementById('baby-length').textContent = length;
+            document.getElementById('estimated-weight').textContent = (weight * 1.1).toFixed(2);
+            document.getElementById('estimated-length').textContent = (length * 1.05).toFixed(2);
+        }
+
+        function calculateDueDate() {
+            const lmpDate = new Date(document.getElementById('lmp-date').value);
+            const dueDate = new Date(lmpDate.setDate(lmpDate.getDate() + 280));
+            document.getElementById('due-date').textContent = dueDate.toDateString();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => showPage('login-page'));
     </script>
 </body>
-
 </html>
