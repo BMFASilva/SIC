@@ -11,8 +11,6 @@ export const typeDefs = gql`
     id: ID!
     usuarioId: ID!
     ultimaMenstruacao: String!
-    dataInicio: String!
-    duracaoEstimativa: Int!
     dataTerminoPrevisto: String!
   }
 
@@ -42,7 +40,6 @@ export const typeDefs = gql`
     createUser(username: String!, password: String!): User!
     login(username: String!, password: String!): LoginResponse!
     createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
-    updateGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
 
     # Dados de Gravidez
     createGravidez(

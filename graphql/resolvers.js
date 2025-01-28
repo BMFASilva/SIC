@@ -78,80 +78,48 @@ const userResolver = {
 };
 
 const gestacaoResolver = {
-    Query: {
-        gestacaoPorUsuario: async (_, { usuarioId }) => {
-            try {
-                const gestacao = await Gestacao.findOne({ usuarioId });
-                if (!gestacao) {
-                    throw new GraphQLError('Nenhuma gestação encontrada para este usuário');
-                }
-                return gestacao;
-            } catch (err) {
-                console.error('Erro ao buscar informações de gestação:', err);
-                throw new GraphQLError('Erro ao buscar informações de gestação');
-            }
-        },
+  Query: {
+      gestacaoPorUsuario: async (_, { usuarioId }) => {
+          try {
+              const gestacao = await Gestacao.findOne({ usuarioId });
+              if (!gestacao) {
+                  throw new GraphQLError('Nenhuma gestação encontrada para este usuário');
+              }
+              return gestacao;
+          } catch (err) {
+              console.error('Erro ao buscar informações de gestação:', err);
+              throw new GraphQLError('Erro ao buscar informações de gestação');
+          }
+      },
+  },
+
+  Mutation: {
+    createGestacao: async (_, { usuarioId, ultimaMenstruacao }) => {
+      try {
+        // Processamento da dataTerminoPrevisto a partir de ultimaMenstruacao
+        const dataInicio = new Date(ultimaMenstruacao); // Para referência, mas não será armazenada
+        const duracaoEstimativa = 40 * 7; // 40 semanas, em dias
+        const dataTerminoPrevisto = new Date(dataInicio);
+        dataTerminoPrevisto.setDate(dataInicio.getDate() + duracaoEstimativa); // Adiciona 280 dias
+  
+        // Criação da gestação sem salvar dataInicio e duracaoEstimativa
+        const gestacao = new Gestacao({
+          usuarioId,
+          ultimaMenstruacao,
+          dataTerminoPrevisto,
+        });
+  
+        // Salva no banco de dados
+        await gestacao.save();
+  
+        return gestacao;
+      } catch (err) {
+        throw new Error('Erro ao criar nova gestação: ' + err.message);
+      }
     },
-
-    Mutation: {
-        createGestacao: async (_, { usuarioId, ultimaMenstruacao }) => {
-            try {
-                const dataInicio = new Date(ultimaMenstruacao);
-                const duracaoEstimativa = 40;
-                const dataTerminoPrevisto = new Date(dataInicio);
-                dataTerminoPrevisto.setDate(dataTerminoPrevisto.getDate() + duracaoEstimativa * 7);
-
-                const existingGestacao = await Gestacao.findOne({ usuarioId });
-                if (existingGestacao) {
-                    throw new GraphQLError('Gestação já existe para este usuário');
-                }
-
-                const newGestacao = new Gestacao({
-                    usuarioId,
-                    ultimaMenstruacao,
-                    dataInicio,
-                    duracaoEstimativa,
-                    dataTerminoPrevisto,
-                });
-
-                console.log('Nova gestação criada:', newGestacao);
-
-                await newGestacao.save();
-                return newGestacao;
-            } catch (err) {
-                console.error('Erro ao criar gestação:', err);
-                throw new GraphQLError('Erro ao criar informações de gestão de gravidez');
-            }
-        },
-
-        updateGestacao: async (_, { usuarioId, ultimaMenstruacao }) => {
-            try {
-                const dataInicio = new Date(ultimaMenstruacao);
-                const duracaoEstimativa = 40;
-                const dataTerminoPrevisto = new Date(dataInicio);
-                dataTerminoPrevisto.setDate(dataTerminoPrevisto.getDate() + duracaoEstimativa * 7);
-
-                const gestacao = await Gestacao.findOne({ usuarioId });
-                if (!gestacao) {
-                    throw new GraphQLError('Gestação não encontrada para este usuário');
-                }
-
-                gestacao.ultimaMenstruacao = ultimaMenstruacao;
-                gestacao.dataInicio = dataInicio;
-                gestacao.duracaoEstimativa = duracaoEstimativa;
-                gestacao.dataTerminoPrevisto = dataTerminoPrevisto;
-
-                console.log('Gestação atualizada:', gestacao);
-
-                await gestacao.save();
-                return gestacao;
-            } catch (err) {
-                console.error('Erro ao atualizar gestação:', err);
-                throw new GraphQLError('Erro ao atualizar informações de gestão de gravidez');
-            }
-        },
-    },
+  },
 };
+
 
 const gravidezResolver = {
     Query: {
