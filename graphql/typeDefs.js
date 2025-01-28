@@ -1,4 +1,4 @@
-import { gql } from "graphql-tag";
+import { gql } from 'graphql-tag';
 
 export const typeDefs = gql`
   type User {
@@ -16,34 +16,37 @@ export const typeDefs = gql`
 
   type DadosGravidez {
     id: ID!
-    gestacaoId: ID!
+    usuarioId: ID!
     semana: Int!
     peso: Float!
     comprimento: Float!
     dataRegistro: String!
   }
 
+  type LoginResponse {
+    token: String!
+  }
+
+  # Subscription
+  type Subscription {
+    notificacaoNovoRegistro: DadosGravidez!
+  }
+
   # Queries
   type Query {
     user(id: ID!): User!
-    users: [User!]! 
+    users: [User!]!
     gestacaoPorUsuario(usuarioId: ID!): Gestacao!
-    dadosGravidezPorUsuario(gestacaoId: ID!): [DadosGravidez!]!
+    dadosGravidezPorUsuario(usuarioId: ID!): [DadosGravidez!]!
   }
-
-  type LoginResponse {
-  token: String!
-}
 
   # Mutations
   type Mutation {
     createUser(username: String!, password: String!): User!
     login(username: String!, password: String!): LoginResponse!
     createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
-
-    # Dados de Gravidez
     createGravidez(
-      gestacaoId: ID!
+      usuarioId: ID!
       semana: Int!
       peso: Float!
       comprimento: Float!
@@ -51,3 +54,4 @@ export const typeDefs = gql`
     ): DadosGravidez!
   }
 `;
+
