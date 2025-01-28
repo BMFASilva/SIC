@@ -14,7 +14,7 @@ export const typeDefs = gql`
     dataTerminoPrevisto: String!
   }
 
-  type DadosGravidez {
+  type Gravidez {
     id: ID!
     usuarioId: ID!
     semana: Int!
@@ -23,21 +23,12 @@ export const typeDefs = gql`
     dataRegistro: String!
   }
 
-  type LoginResponse {
-    token: String!
-  }
-
-  # Subscription
-  type Subscription {
-    notificacaoNovoRegistro: DadosGravidez!
-  }
-
   # Queries
   type Query {
-    user(id: ID!): User!
     users: [User!]!
+    user(id: ID!): User!
     gestacaoPorUsuario(usuarioId: ID!): Gestacao!
-    dadosGravidezPorUsuario(usuarioId: ID!): [DadosGravidez!]!
+    dadosGravidezPorUsuario(usuarioId: ID!): [Gravidez!]!
   }
 
   # Mutations
@@ -45,13 +36,15 @@ export const typeDefs = gql`
     createUser(username: String!, password: String!): User!
     login(username: String!, password: String!): LoginResponse!
     createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
-    createGravidez(
-      usuarioId: ID!
-      semana: Int!
-      peso: Float!
-      comprimento: Float!
-      dataRegistro: String!
-    ): DadosGravidez!
+    createGravidez(usuarioId: ID!, semana: Int!, peso: Float!, comprimento: Float!, dataRegistro: String!): Gravidez!
+  }
+
+  type LoginResponse {
+    token: String!
+  }
+
+  # Subscriptions
+  type Subscription {
+    notificacaoNovoRegistro: Gravidez!
   }
 `;
-

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pregnancy Tracker - Login</title>
+</head>
+<body>
+    <div style="max-width: 400px; margin: 0 auto; padding: 20px;">
+        <h1>Welcome to Pregnancy Tracker</h1>
+        <p>Login to continue or create an account if you're new.</p>
+        
+        <!-- Formulário de login -->
+        <form id="loginForm" method="POST">
+            <label for="username">Username:</label><br>
+            <input type="text" id="username" name="username" required><br><br>
+            
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required><br><br>
+            
+            <button type="submit">Login</button>
+        </form>
+        
+        <p>Don't have an account? <a href="#" id="createAccountLink">Create one here</a>.</p>
+    </div>
+
+    <script>
+        // Função para enviar o login para o backend
+        async function login(username, password) {
+            const query = `
+                mutation Login($username: String!, $password: String!) {
+                    login(username: $username, password: $password) {
+                        token
+                    }
+                }
+            `;
+            const variables = { username, password };
+            
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query, variables })
+            });
+
+            const result = await response.json();
+            return result;
+        }
+
+        // Função de login quando o formulário é enviado
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const result = await login(username, password);
+            if (result.data && result.data.login) {
+                alert('Login successful! Token: ' + result.data.login.token);
+                // Aqui, você pode redirecionar para outra página ou guardar o token no localStorage
+            } else {
+                alert('Error: ' + result.errors[0].message);
+            }
+        });
+
+        // Função para criar uma nova conta
+        async function createAccount(username, password) {
+            const query = `
+                mutation CreateUser($username: String!, $password: String!) {
+                    createUser(username: $username, password: $password) {
+                        id
+                        username
+                    }
+                }
+            `;
+            const variables = { username, password };
+            
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query, variables })
+            });
+
+            const result = await response.json();
+            return result;
+        }
+
+        // Lógica de redirecionamento ou exibição do formulário de criação de conta
+        document.getElementById('createAccountLink').addEventListener('click', function() {
+            const username = prompt('Enter your username:');
+            const password = prompt('Enter your password:');
+            
+            if (username && password) {
+                createAccount(username, password).then(result => {
+                    if (result.data && result.data.createUser) {
+                        alert('Account created successfully!');
+                    } else {
+                        alert('Error creating account: ' + result.errors[0].message);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
