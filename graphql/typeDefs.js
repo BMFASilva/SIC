@@ -33,10 +33,14 @@ export const typeDefs = gql`
     dadosGravidezPorUsuario(gestacaoId: ID!): [DadosGravidez!]!
   }
 
+  type LoginResponse {
+  token: String!
+}
+
   # Mutations
   type Mutation {
     createUser(username: String!, password: String!): User!
-    login(username: String!, password: String!): String!
+    login(username: String!, password: String!): LoginResponse!
     createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
     updateGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
 
