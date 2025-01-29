@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Gestacao from '../models/GestaoGravidez.js';
 import Gravidez from '../models/Gravidez.js';
+import GravidezMedia from '../models/GravidezMedia.js';
 
 const pubsub = new PubSub();
 
@@ -165,7 +166,14 @@ const gravidezResolver = {
   },
 };
 
+const gravidezMedia = {
+  Query: {
+      gravidezMediaPorSemana: async (_, { semana }) => {
+          return await GravidezMedia.findOne({ semana });
+      }
+  }
+};
 
 import { mergeResolvers } from '@graphql-tools/merge';
 
-export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver]);
+export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver, gravidezMedia]);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pregnancy Tracker - Login</title>
+    <title>Pregnancy Tracker</title>
 </head>
 <body>
     <div style="max-width: 400px; margin: 0 auto; padding: 20px;">
@@ -21,12 +21,10 @@
             <button type="submit">Login</button>
         </form>
         
-        <p>Don't have an account? <a href="#" id="createAccountLink">Create one here</a>.</p>
+        <p>Don't have an account? <a href="" id="createAccountLink">Create one here</a>.</p>
 
         <!-- Botão para mostrar informações -->
         <button id="showInfoBtn" disabled>Data de Gravidez</button>
-
-        <!-- Seção escondida inicialmente -->
         <div id="extraInfo" style="display: none;">
             <label for="ultimaMenstruacao">Última Menstruação:</label>
             <input type="date" id="ultimaMenstruacao"><br><br>
@@ -37,45 +35,31 @@
             <button id="submitDataBtn">Submit</button>
         </div>
 
-        <!-- Novo botão para Checkup da Semana -->
-        <button id="showCheckupFormBtn">Checkup da Semana</button>
-
-        <!-- Formulário de Checkup da Semana e Valores Médios juntos -->
+        <!-- Botão para Checkup da Semana -->
+        <button id="showCheckupFormBtn" disabled>Checkup da Semana</button>
         <div id="checkupBlock" style="display: none;">
-            <!-- Formulário de Checkup da Semana -->
             <h3>Checkup da Semana</h3>
             <label for="semana">Semana:</label>
             <input type="number" id="semana" required><br><br>
-
             <label for="peso">Peso:</label>
             <input type="number" id="peso" required><br><br>
-
             <label for="comprimento">Comprimento:</label>
             <input type="number" id="comprimento" required><br><br>
-
             <button id="submitCheckupBtn">Ver Resultados</button>
-
-            <!-- Título para Valores Médios -->
             <h3>Valores Médios</h3>
-
-            <!-- Inputs de Valores Médios (não editáveis) -->
             <label for="semanaAvg">Semana:</label>
             <input type="number" id="semanaAvg" readonly><br><br>
-
             <label for="pesoAvg">Peso:</label>
             <input type="number" id="pesoAvg" readonly><br><br>
-
             <label for="comprimentoAvg">Comprimento:</label>
             <input type="number" id="comprimentoAvg" readonly><br><br>
             <h4>Facto</h3>
             <p id="randomFact"></p>
         </div>
-        <!-- Botão para mostrar os resultados -->
-    <button id="showResultsBtn">Mostrar Resultados</button>
 
-    <!-- Container onde a tabela será exibida -->
+        <!-- Botão para mostrar os resultados -->
+    <button id="showResultsBtn" disabled>Mostrar Resultados</button>
     <div id="resultsTableContainer">
-        <!-- Tabela para exibir os resultados -->
         <table id="resultsTable">
             <thead>
                 <tr>
@@ -88,21 +72,16 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- As linhas da tabela serão inseridas aqui dinamicamente -->
             </tbody>
         </table>
-
-        <h1>Subscrições GraphQL com WebSockets</h1>
-        <div id="data"></div>
-        <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.10.0/umd/graphql-ws.min.js"></script>
-
-
-
     </div>
+    <h1>Subscrições GraphQL com WebSockets</h1>
+    <div id="data"></div>
+    <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.10.0/umd/graphql-ws.min.js"></script>
     </div>
 
     <script type="module">
-        // Função para logar e armazenar token e userID
+        // Função Login
         async function login(username, password) {
             const query = `
                 mutation Login($username: String!, $password: String!) {
@@ -127,7 +106,7 @@
             const result = await response.json();
             if (result.data && result.data.login) {
                 localStorage.setItem('authToken', result.data.login.token);
-                localStorage.setItem('userID', result.data.login.user.id);  // Salva o userID no localStorage
+                localStorage.setItem('userID', result.data.login.user.id); 
                 alert('Login successful!');
                 checkLoginStatus();
             } else {
@@ -135,7 +114,7 @@
             }
         }
 
-        // Função de login no formulário
+        // Função de login DOM
         document.getElementById('loginForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const username = document.getElementById('username').value;
@@ -143,7 +122,7 @@
             await login(username, password);
         });
 
-        // Função para criar uma nova conta
+        // Função para criar uma conta nova
         async function createAccount(username, password) {
             const query = `
                 mutation CreateUser($username: String!, $password: String!) {
@@ -171,7 +150,7 @@
             }
         }
 
-        // Redirecionamento para criar conta
+        // Função de conta nova DOM
         document.getElementById('createAccountLink').addEventListener('click', function() {
             const username = prompt('Enter your username:');
             const password = prompt('Enter your password:');
@@ -180,41 +159,45 @@
             }
         });
 
-        // Verifica se o usuário está logado
+        // Função se o usuário está logado
         function checkLoginStatus() {
             const token = localStorage.getItem('authToken');
             const userID = localStorage.getItem('userID');
             if (token && userID) {
                 document.getElementById('showInfoBtn').disabled = false;
-                document.getElementById('extraInfo').style.display = 'block';  // Exibe os campos
+                document.getElementById('showCheckupFormBtn').disabled = false;
+                document.getElementById('showResultsBtn').disabled = false;   
             }
         }
 
-        // Mostra a seção extra ao clicar no botão
+        // Verifica se o bloco está visível DOM
         document.getElementById('showInfoBtn').addEventListener('click', function() {
     const extraInfo = document.getElementById('extraInfo');
     // Verifica se o bloco está visível
     if (extraInfo.style.display === 'block') {
-        extraInfo.style.display = 'none';  // Esconde o bloco
+        extraInfo.style.display = 'none';  
     } else {
-        extraInfo.style.display = 'block';  // Exibe o bloco
-        fetchData();  // Carregar dados se disponíveis
+        extraInfo.style.display = 'block'; 
+        fetchData(); 
     }
 });
+
+
         document.getElementById('showCheckupFormBtn').addEventListener('click', function() {
                     const checkupBlock = document.getElementById('checkupBlock');
                     if (checkupBlock.style.display === 'block') {
-                        checkupBlock.style.display = 'none';  // Esconde o bloco
+                        checkupBlock.style.display = 'none';  
                     } else {
-                        checkupBlock.style.display = 'block';  // Exibe o bloco
+                        checkupBlock.style.display = 'block';  
                     }
                 });
 
-                async function submitData() {
+        // Pega na data e submete na base de dados
+        async function submitData() {
             const userID = localStorage.getItem('userID');
             const ultimaMenstruacao = document.getElementById('ultimaMenstruacao').value;
             const dataFormatada = new Date(ultimaMenstruacao);
-            const isoData = dataFormatada.toISOString();  // Converte para ISO no formato UTC
+            const isoData = dataFormatada.toISOString();  
 
             const query = `
                 mutation CreateGestacao($usuarioId: ID!, $ultimaMenstruacao: String!) {
@@ -234,11 +217,11 @@
                 },
                 body: JSON.stringify({ query, variables })
             }); 
-        // Após o envio, buscar a data prevista
+            //Depois de meter na base de dados, da refresh
             fetchData();
         }
 
-        // Função para buscar dados de gestação
+        // Função para buscar dados sobre data de gravidez
         async function fetchData() {
             const userID = localStorage.getItem('userID');
 
@@ -284,30 +267,54 @@
 
         document.getElementById('submitDataBtn').addEventListener('click', submitData)
 
+        // Submeter informação sobre o bebe, e devolve dados medios
         document.getElementById('submitCheckupBtn').addEventListener('click', async function() {
             const userID = localStorage.getItem('userID');
-            const semana = parseInt(document.getElementById('semana').value)
-            const peso = parseFloat(document.getElementById('peso').value)
-            const comprimento = parseFloat(document.getElementById('comprimento').value)
-            const dataRegistro = new Date().toISOString();  // Captura a data e hora atuais
-            // Verificação dos valores dos inputs
+            const semana = parseInt(document.getElementById('semana').value);
+            const peso = parseFloat(document.getElementById('peso').value);
+            const comprimento = parseFloat(document.getElementById('comprimento').value);
+            const dataRegistro = new Date().toISOString();
+
             if (!semana || !peso || !comprimento) {
                 console.error("Missing input values.");
                 alert("Preencha todos os valores.");
                 return;
             }
-            const semanaData = dados.find(item => item.semana === semana);
 
-            if (semanaData) {
-                // Preencher valores médios com dados da semana selecionada
-                document.getElementById('semanaAvg').value = semanaData.semana;
-                document.getElementById('pesoAvg').value = semanaData.peso;
-                document.getElementById('comprimentoAvg').value = semanaData.comprimento;
-                document.getElementById('randomFact').innerHTML = semanaData.facto;
-            } else {
-                alert("Semana não encontrada.");
+            const queryMedia = `
+                query ($semana: Int!) {
+                    gravidezMediaPorSemana(semana: $semana) {
+                        peso
+                        comprimento
+                        facto
+                    }
+                }
+            `;
+
+            try {
+                const responseMedia = await fetch('http://localhost:4000/graphql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: queryMedia, variables: { semana } })
+                });
+                
+                const resultMedia = await responseMedia.json();
+                const semanaData = resultMedia.data.gravidezMediaPorSemana;
+
+                if (semanaData) {
+                    document.getElementById('semanaAvg').value = semana;
+                    document.getElementById('pesoAvg').value = semanaData.peso;
+                    document.getElementById('comprimentoAvg').value = semanaData.comprimento;
+                    document.getElementById('randomFact').innerHTML = semanaData.facto;
+                } else {
+                    alert("Semana não encontrada.");
+                }
+            } catch (error) {
+                console.error("Erro ao buscar os dados médios:", error);
+                alert("Erro ao carregar os dados médios.");
             }
-            const query = `
+
+            const mutation = `
                 mutation CreateGravidez($usuarioId: ID!, $semana: Int!, $peso: Float!, $comprimento: Float!, $dataRegistro: String!) {
                     createGravidez(usuarioId: $usuarioId, semana: $semana, peso: $peso, comprimento: $comprimento, dataRegistro: $dataRegistro) {
                         id
@@ -318,19 +325,13 @@
                     }
                 }
             `;
-            
-            const variables = { usuarioId: userID, semana, peso, comprimento, dataRegistro };
-            try {
-                const response = await fetch('http://localhost:4000/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query, variables })
-                });
 
-                // Log para ver a resposta da API
-                const result = await response.json();
+            try {
+                await fetch('http://localhost:4000/graphql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: mutation, variables: { usuarioId: userID, semana, peso, comprimento, dataRegistro } })
+                });
             } catch (error) {
                 console.error("Error during the request:", error);
                 alert("An error occurred during the request.");
@@ -339,15 +340,18 @@
 
 
         document.getElementById('showResultsBtn').addEventListener('click', function() {
+    const resultsBLock = document.getElementById('resultsTableContainer');
+                    if (resultsBLock.style.display === 'block') {
+                        resultsBLock.style.display = 'none';  
+                    } else {
+                        resultsBLock.style.display = 'block'; 
+                    }
     const resultsTableContainer = document.getElementById('resultsTableContainer');
     const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
-    
-    // Limpa a tabela antes de adicionar novos dados
     resultsTableBody.innerHTML = '';
 
     const userID = localStorage.getItem('userID');
     
-    // Buscar dados de gravidez para o usuário
     const query = `
         query ($usuarioId: ID!) {
             dadosGravidezPorUsuario(usuarioId: $usuarioId) {
@@ -357,40 +361,46 @@
             }
         }
     `;
-    const variables = { usuarioId: userID };
     
     fetch('http://localhost:4000/graphql', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query, variables })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables: { usuarioId: userID } })
     })
     .then(response => response.json())
-    .then(data => {   
+    .then(async data => {   
         if (data.data && data.data.dadosGravidezPorUsuario) {
-            // Ordena os dados pelas semanas
             data.data.dadosGravidezPorUsuario.sort((a, b) => a.semana - b.semana);
 
-            // Preencher a tabela com os resultados
-            data.data.dadosGravidezPorUsuario.forEach(item => {         
-                const semanaData = dados.find(d => d.semana === item.semana);
-                if (semanaData) {
-                    // Adicionar uma linha na tabela
-                    const row = resultsTableBody.insertRow();
-                    
-                    row.insertCell(0).innerText = item.semana;
-                    row.insertCell(1).innerText = item.peso;
-                    row.insertCell(2).innerText = item.comprimento;
-                    row.insertCell(3).innerText = semanaData.peso;
-                    row.insertCell(4).innerText = semanaData.comprimento;
-                    row.insertCell(5).innerText = semanaData.facto;
-                } else {
-                    console.log('Sem dados para semana:', item.semana);  // Verifica se a semanaData não foi encontrada
-                }
-            });
+            for (const item of data.data.dadosGravidezPorUsuario) {
+                const queryMedia = `
+                    query ($semana: Int!) {
+                        gravidezMediaPorSemana(semana: $semana) {
+                            peso
+                            comprimento
+                            facto
+                        }
+                    }
+                `;
+                
+                const responseMedia = await fetch('http://localhost:4000/graphql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: queryMedia, variables: { semana: item.semana } })
+                });
+                
+                const dataMedia = await responseMedia.json();
+                const semanaData = dataMedia.data.gravidezMediaPorSemana;
+                
+                const row = resultsTableBody.insertRow();
+                row.insertCell(0).innerText = item.semana;
+                row.insertCell(1).innerText = item.peso;
+                row.insertCell(2).innerText = item.comprimento;
+                row.insertCell(3).innerText = semanaData ? semanaData.peso : 'N/A';
+                row.insertCell(4).innerText = semanaData ? semanaData.comprimento : 'N/A';
+                row.insertCell(5).innerText = semanaData ? semanaData.facto : 'N/A';
+            }
         } else {
-            console.log('Nenhum dado de gravidez encontrado no response');
             alert("Nenhum dado de gravidez encontrado.");
         }
     })
@@ -400,27 +410,21 @@
     });
 });
 
-
-        // Verifica login ao carregar a página
         checkLoginStatus();
-// WebSocket CLIENT
-        // Inicializar o cliente GraphQL WebSocket
-        const url = 'ws://localhost:4000/graphql'; // Substituir pelo URL do teu se
+
+        const url = 'ws://localhost:4000/graphql'; 
 
         const client = graphqlWs.createClient({
             url: url,
         });
-        // Query de subscrição
         const SUBSCRIPTION_QUERY = `
             subscription Subscription {
-  notificacaoNovoRegistro {
-    mensagem
-    usuarioId
-  }
-}
-
+                notificacaoNovoRegistro {
+                    mensagem
+                    usuarioId
+                }
+            }
             `;
-        // Subscrição ativa
         client.subscribe(
             {
                 query: SUBSCRIPTION_QUERY,
@@ -440,9 +444,6 @@
                 complete: () => console.log('Subscrição terminada'),
             }
         );
-
-
-
     </script>
 </body>
 </html>

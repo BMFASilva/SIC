@@ -12,6 +12,7 @@ import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers.js';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import { seedDatabase } from './seedDatabase.js';
 
 // Criar o esquema executável
 const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -28,49 +29,50 @@ app.use(cors());
 
 // Inicializar o servidor Apollo com introspecção habilitada
 const server = new ApolloServer({
-  schema,
-  plugins: [
-    ApolloServerPluginDrainHttpServer({ httpServer }),
-  ],
-  introspection: true, // Habilita a introspecção
+    schema,
+    plugins: [
+        ApolloServerPluginDrainHttpServer({ httpServer }),
+    ],
+    introspection: true,  // Habilita a introspecção
 });
 
-// Conectar à base de dados MongoDB
-connectDB();
-
-// Iniciar o servidor
+// Função para iniciar o servidor
 const startServer = async () => {
-  await server.start();
+    await connectDB(); // Conectar ao banco de dados
 
-  // Middleware para o Apollo Server
-  app.use('/graphql',
-    expressMiddleware(server, {
-      context: async ({ req }) => {
-        const token = req.headers.authorization || '';
-        let payload = null;
-        try {
-          payload = jwt.verify(token, process.env.JWT_SECRET);
-          return { loggedIn: true, user: payload };
-        } catch (err) {
-          return { loggedIn: false, user: null };
-        }
-      },
-    })
-  );
+    await seedDatabase(); // Inserir os dados caso ainda não estejam lá
 
-  // Configurar o servidor WebSocket para subscrições
-  const wsServer = new WebSocketServer({
-    server: httpServer,
-    path: '/graphql',
-  });
+    await server.start(); // Iniciar Apollo Server
 
-  // Usar servidor de WebSocket para GraphQL Subscriptions
-  useServer({ schema }, wsServer);
+    // Middleware para o Apollo Server
+    app.use('/graphql',
+        expressMiddleware(server, {
+            context: async ({ req }) => {
+                const token = req.headers.authorization || '';
+                let payload = null;
+                try {
+                    payload = jwt.verify(token, process.env.JWT_SECRET);
+                    return { loggedIn: true, user: payload };
+                } catch (err) {
+                    return { loggedIn: false, user: null };
+                }
+            },
+        })
+    );
 
-  const PORT = 4000;
-  httpServer.listen(PORT, () => {
-    console.log(`Servidor pronto em http://localhost:${PORT}/graphql`);
-  });
+    // Configurar o servidor WebSocket para subscrições
+    const wsServer = new WebSocketServer({
+        server: httpServer,
+        path: '/graphql',
+    });
+
+    // Usar servidor de WebSocket para GraphQL Subscriptions
+    useServer({ schema }, wsServer);
+
+    const PORT = 4000;
+    httpServer.listen(PORT, () => {
+        console.log(`🚀 Servidor pronto em http://localhost:${PORT}/graphql`);
+    });
 };
 
 startServer();
