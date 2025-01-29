@@ -52,7 +52,7 @@ const userResolver = {
           throw new GraphQLError('Usuário ou senha inválidos');
         }
         
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        
         
         const ultimoRegistro = await Gravidez.findOne({ usuarioId: user.id }).sort({ dataRegistro: -1 });
         
