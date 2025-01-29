@@ -10,3 +10,7 @@ DB_HOST: 'gravidezematernidade.ekf2n.mongodb.net'
 
 # JWT Key Token
 JWT_SECRET="my-API-ultra-secure-and-ultra-long-secret"
+
+# Credenciais de Login
+Username: 'Professor'
+Password: '123'
