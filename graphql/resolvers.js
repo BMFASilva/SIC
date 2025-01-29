@@ -52,19 +52,44 @@ const userResolver = {
           throw new GraphQLError('Usuário ou senha inválidos');
         }
         
-        // Gerar o token JWT
-        const token = jwt.sign(
-          { userId: user._id }, // Dados que você quer embutir no token
-          'seuSegredo', // Chave secreta para assinar o token
-          { expiresIn: '1h' } // Defina o tempo de expiração do token, por exemplo 1 hora
-        );
-
-        return { token, user };
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        
+        // Verifica o último registro de gravidez
+        const ultimoRegistro = await Gravidez.findOne({ usuarioId: user.id }).sort({ dataRegistro: -1 });
+        let notificacao = null;
+        
+        if (ultimoRegistro) {
+          const umaSemanaAtras = new Date();
+          umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7); // 7 dias atrás
+    
+          if (new Date(ultimoRegistro.dataRegistro) < umaSemanaAtras) {
+            notificacao = {
+              mensagem: 'Já passou uma semana desde o último registro de gravidez. Atualize os dados.',
+              usuarioId: user.id,
+            };
+    
+            // Publica a notificação para os inscritos
+            pubsub.publish('NOTIFICACAO_NOVO_REGISTRO', {
+              notificacaoNovoRegistro: notificacao,
+            });
+          }
+        }
+        
+        return { token, user, notificacao };
       } catch (err) {
         throw new GraphQLError('Erro ao realizar login');
       }
     }
+    
+    
   },
+  Subscription: {
+    notificacaoNovoRegistro: {
+      subscribe: () => pubsub.asyncIterableIterator(['NOTIFICACAO_NOVO_REGISTRO'])
+    }
+  }
+  
+  ,
 };
 
 

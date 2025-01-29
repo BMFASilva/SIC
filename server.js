@@ -28,11 +28,11 @@ app.use(cors());
 
 // Inicializar o servidor Apollo com introspecção habilitada
 const server = new ApolloServer({
-    schema,
-    plugins: [
-        ApolloServerPluginDrainHttpServer({ httpServer }),
-    ],
-    introspection: true,  // Habilita a introspecção
+  schema,
+  plugins: [
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+  ],
+  introspection: true, // Habilita a introspecção
 });
 
 // Conectar à base de dados MongoDB
@@ -40,37 +40,37 @@ connectDB();
 
 // Iniciar o servidor
 const startServer = async () => {
-    await server.start();
+  await server.start();
 
-    // Middleware para o Apollo Server
-    app.use('/graphql',
-        expressMiddleware(server, {
-            context: async ({ req }) => {
-                const token = req.headers.authorization || '';
-                let payload = null;
-                try {
-                    payload = jwt.verify(token, process.env.JWT_SECRET);
-                    return { loggedIn: true, user: payload };
-                } catch (err) {
-                    return { loggedIn: false, user: null };
-                }
-            },
-        })
-    );
+  // Middleware para o Apollo Server
+  app.use('/graphql',
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const token = req.headers.authorization || '';
+        let payload = null;
+        try {
+          payload = jwt.verify(token, process.env.JWT_SECRET);
+          return { loggedIn: true, user: payload };
+        } catch (err) {
+          return { loggedIn: false, user: null };
+        }
+      },
+    })
+  );
 
-    // Configurar o servidor WebSocket para subscrições
-    const wsServer = new WebSocketServer({
-        server: httpServer,
-        path: '/graphql',
-    });
+  // Configurar o servidor WebSocket para subscrições
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: '/graphql',
+  });
 
-    // Usar servidor de WebSocket para GraphQL Subscriptions
-    useServer({ schema }, wsServer);
+  // Usar servidor de WebSocket para GraphQL Subscriptions
+  useServer({ schema }, wsServer);
 
-    const PORT = 4000;
-    httpServer.listen(PORT, () => {
-        console.log(`Servidor pronto em http://localhost:${PORT}/graphql`);
-    });
+  const PORT = 4000;
+  httpServer.listen(PORT, () => {
+    console.log(`Servidor pronto em http://localhost:${PORT}/graphql`);
+  });
 };
 
 startServer();

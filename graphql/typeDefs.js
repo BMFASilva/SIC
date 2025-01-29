@@ -44,8 +44,13 @@ export const typeDefs = gql`
     createGravidez(usuarioId: ID!, semana: Int!, peso: Float!, comprimento: Float!, dataRegistro: String!): Gravidez!
   }
 
-  # Subscriptions
-  type Subscription {
-    notificacaoNovoRegistro: Gravidez!
-  }
+   type Notificacao {
+  mensagem: String!
+  usuarioId: String!
+}
+
+type Subscription {
+  notificacaoNovoRegistro: Notificacao!
+}
+
 `;

@@ -91,6 +91,13 @@
                 <!-- As linhas da tabela serão inseridas aqui dinamicamente -->
             </tbody>
         </table>
+
+        <h1>Subscrições GraphQL com WebSockets</h1>
+        <div id="data"></div>
+        <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.10.0/umd/graphql-ws.min.js"></script>
+
+
+
     </div>
     </div>
 
@@ -396,6 +403,46 @@
 
         // Verifica login ao carregar a página
         checkLoginStatus();
+// WebSocket CLIENT
+        // Inicializar o cliente GraphQL WebSocket
+        const url = 'ws://localhost:4000/graphql'; // Substituir pelo URL do teu se
+
+        const client = graphqlWs.createClient({
+            url: url,
+        });
+        // Query de subscrição
+        const SUBSCRIPTION_QUERY = `
+            subscription Subscription {
+  notificacaoNovoRegistro {
+    mensagem
+    usuarioId
+  }
+}
+
+            `;
+        // Subscrição ativa
+        client.subscribe(
+            {
+                query: SUBSCRIPTION_QUERY,
+            },
+            {
+                next: (data) => {
+                    console.log(data)
+                    const mensagem = data.data.notificacaoNovoRegistro.mensagem
+                    ;
+                    document.getElementById('data').innerText = `
+            Mensagem nova:
+            Conteúdo: ${mensagem}
+           
+        `;
+                },
+                error: (err) => console.error('Erro na subscrição:', err),
+                complete: () => console.log('Subscrição terminada'),
+            }
+        );
+
+
+
     </script>
 </body>
 </html>
