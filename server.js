@@ -10,7 +10,6 @@ import 'dotenv/config';
 import { connectDB } from './models/db.js';
 import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers.js';
-import { seedDatabase } from './seedDatabase.js';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
 
@@ -36,11 +35,11 @@ const server = new ApolloServer({
     introspection: true,  // Habilita a introspecção
 });
 
+// Conectar à base de dados MongoDB
+connectDB();
+
 // Iniciar o servidor
 const startServer = async () => {
-    await connectDB();  // Conectar à base de dados
-    await seedDatabase();  // Popular os dados se necessário
-    
     await server.start();
 
     // Middleware para o Apollo Server
@@ -70,7 +69,7 @@ const startServer = async () => {
 
     const PORT = 4000;
     httpServer.listen(PORT, () => {
-        console.log(`🚀 Servidor pronto em http://localhost:${PORT}/graphql`);
+        console.log(`Servidor pronto em http://localhost:${PORT}/graphql`);
     });
 };
 

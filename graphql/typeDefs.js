@@ -23,14 +23,6 @@ export const typeDefs = gql`
     dataRegistro: String!
   }
 
-    type GravidezMedia {
-    id: ID!
-    semana: Int!
-    peso: Float!
-    comprimento: Float!
-    facto: String!
-  }
-
   type LoginResponse {
     token: String!
     user: User!
@@ -42,7 +34,6 @@ export const typeDefs = gql`
     user(id: ID!): User!
     gestacaoPorUsuario(usuarioId: ID!): Gestacao!
     dadosGravidezPorUsuario(usuarioId: ID!): [Gravidez!]!
-     gravidezMedia: [GravidezMedia!]!
   }
 
   # Mutations

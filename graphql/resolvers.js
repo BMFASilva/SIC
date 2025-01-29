@@ -6,9 +6,9 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Gestacao from '../models/GestaoGravidez.js';
 import Gravidez from '../models/Gravidez.js';
-import GravidezMedia from '../models/GravidezMedia.js';
 
 const pubsub = new PubSub();
+
 
 const userResolver = {
   Query: {
@@ -52,40 +52,21 @@ const userResolver = {
           throw new GraphQLError('Usuário ou senha inválidos');
         }
         
-        
-        
-        const ultimoRegistro = await Gravidez.findOne({ usuarioId: user.id }).sort({ dataRegistro: -1 });
-        
-        let notificacao = null;
-        if (ultimoRegistro) {
-          const umaSemanaAtras = new Date();
-          umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7);
-          
-          if (new Date(ultimoRegistro.dataRegistro) < umaSemanaAtras) {
-            notificacao = {
-              mensagem: 'Já passou uma semana desde o último registro de gravidez. Atualize os dados.',
-              usuarioId: user.id,
-            };
-            
-            pubsub.publish('NOTIFICACAO_NOVO_REGISTRO', {
-              notificacaoNovoRegistro: notificacao,
-            });
-          }
-        }
-        
-        return { token, user, notificacao };
+        // Gerar o token JWT
+        const token = jwt.sign(
+          { userId: user._id }, // Dados que você quer embutir no token
+          'seuSegredo', // Chave secreta para assinar o token
+          { expiresIn: '1h' } // Defina o tempo de expiração do token, por exemplo 1 hora
+        );
+
+        return { token, user };
       } catch (err) {
         throw new GraphQLError('Erro ao realizar login');
       }
     }
   },
-
-  Subscription: {
-    notificacaoNovoRegistro: {
-      subscribe: () => pubsub.asyncIterator('NOTIFICACAO_NOVO_REGISTRO'),
-    },
-  },
 };
+
 
 const gestacaoResolver = {
   Query: {
@@ -159,18 +140,7 @@ const gravidezResolver = {
   },
 };
 
-const gravidezMediaResolver = {
-  Query: {
-    gravidezMedia: async () => {
-      try {
-        return await GravidezMedia.find(); // Retorna todos os dados de gravidez média
-      } catch (err) {
-        throw new GraphQLError('Erro ao buscar gravidez média');
-      }
-    },
-  },
-};
 
 import { mergeResolvers } from '@graphql-tools/merge';
 
-export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver, gravidezMediaResolver]);
+export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver]);
