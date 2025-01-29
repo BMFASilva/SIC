@@ -24,7 +24,7 @@
         <p>Don't have an account? <a href="#" id="createAccountLink">Create one here</a>.</p>
 
         <!-- Botão para mostrar informações -->
-        <button id="showInfoBtn" disabled>Show More Info</button>
+        <button id="showInfoBtn" disabled>Data de Gravidez</button>
 
         <!-- Seção escondida inicialmente -->
         <div id="extraInfo" style="display: none;">
@@ -70,6 +70,28 @@
             <h4>Facto</h3>
             <p id="randomFact"></p>
         </div>
+        <!-- Botão para mostrar os resultados -->
+    <button id="showResultsBtn">Mostrar Resultados</button>
+
+    <!-- Container onde a tabela será exibida -->
+    <div id="resultsTableContainer">
+        <!-- Tabela para exibir os resultados -->
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Semana</th>
+                    <th>Peso (Kg)</th>
+                    <th>Comprimento (cm)</th>
+                    <th>Peso Esperado (Kg)</th>
+                    <th>Comprimento Esperado (cm)</th>
+                    <th>Facto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- As linhas da tabela serão inseridas aqui dinamicamente -->
+            </tbody>
+        </table>
+    </div>
     </div>
 
     <script type="module">
@@ -308,6 +330,79 @@
                 alert("An error occurred during the request.");
             }
         });
+
+
+        document.getElementById('showResultsBtn').addEventListener('click', function() {
+    const resultsTableContainer = document.getElementById('resultsTableContainer');
+    const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+
+    // Verifica se a tabela já está visível
+    if (resultsTableContainer.style.display === 'none' || resultsTableContainer.style.display === '') {
+        // Torna a tabela visível
+        resultsTableContainer.style.display = 'block';
+        
+        // Limpa a tabela antes de adicionar novos dados
+        resultsTableBody.innerHTML = '';
+
+        const userID = localStorage.getItem('userID');
+        
+        // Buscar dados de gravidez para o usuário
+        const query = `
+            query ($usuarioId: ID!) {
+                dadosGravidezPorUsuario(usuarioId: $usuarioId) {
+                    semana
+                    peso
+                    comprimento
+                }
+            }
+        `;
+        const variables = { usuarioId: userID };
+        
+        fetch('http://localhost:4000/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query, variables })
+        })
+        .then(response => response.json())
+        .then(data => {   
+            if (data.data && data.data.dadosGravidezPorUsuario) {
+                // Ordena os dados pelas semanas
+                data.data.dadosGravidezPorUsuario.sort((a, b) => a.semana - b.semana);
+
+                // Preencher a tabela com os resultados
+                data.data.dadosGravidezPorUsuario.forEach(item => {         
+                    const semanaData = dados.find(d => d.semana === item.semana);
+                    if (semanaData) {
+                        // Adicionar uma linha na tabela
+                        const row = resultsTableBody.insertRow();
+                        
+                        row.insertCell(0).innerText = item.semana;
+                        row.insertCell(1).innerText = item.peso;
+                        row.insertCell(2).innerText = item.comprimento;
+                        row.insertCell(3).innerText = semanaData.peso;
+                        row.insertCell(4).innerText = semanaData.comprimento;
+                        row.insertCell(5).innerText = semanaData.facto;
+                    } else {
+                        console.log('Sem dados para semana:', item.semana);  // Verifica se a semanaData não foi encontrada
+                    }
+                });
+            } else {
+                console.log('Nenhum dado de gravidez encontrado no response');
+                alert("Nenhum dado de gravidez encontrado.");
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao carregar os resultados:", error);
+            alert("Ocorreu um erro ao carregar os resultados.");
+        });
+    } else {
+        // Oculta a tabela se já estiver visível
+        resultsTableContainer.style.display = 'none';
+    }
+});
+
 
         // Verifica login ao carregar a página
         checkLoginStatus();
