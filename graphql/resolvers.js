@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Gestacao from '../models/GestaoGravidez.js';
 import Gravidez from '../models/Gravidez.js';
+import GravidezMedia from '../models/GravidezMedia.js';
 
 const pubsub = new PubSub();
 
@@ -50,12 +51,33 @@ const userResolver = {
         if (!user || !(await bcrypt.compare(password, user.password))) {
           throw new GraphQLError('Usuário ou senha inválidos');
         }
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return { token, user };
+        
+        
+        
+        const ultimoRegistro = await Gravidez.findOne({ usuarioId: user.id }).sort({ dataRegistro: -1 });
+        
+        let notificacao = null;
+        if (ultimoRegistro) {
+          const umaSemanaAtras = new Date();
+          umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7);
+          
+          if (new Date(ultimoRegistro.dataRegistro) < umaSemanaAtras) {
+            notificacao = {
+              mensagem: 'Já passou uma semana desde o último registro de gravidez. Atualize os dados.',
+              usuarioId: user.id,
+            };
+            
+            pubsub.publish('NOTIFICACAO_NOVO_REGISTRO', {
+              notificacaoNovoRegistro: notificacao,
+            });
+          }
+        }
+        
+        return { token, user, notificacao };
       } catch (err) {
         throw new GraphQLError('Erro ao realizar login');
       }
-    },
+    }
   },
 
   Subscription: {
@@ -72,7 +94,6 @@ const gestacaoResolver = {
           const gestacao = await Gestacao.findOne({ usuarioId: usuarioId });
           return gestacao;
       } catch (err) {
-          console.error(err);
           throw new Error('Erro ao buscar gestação');
       }
   },
@@ -93,7 +114,6 @@ const gestacaoResolver = {
     
         return gestacao;
       } catch (error) {
-        console.error("Erro ao criar gestação:", error);
         throw new Error("Erro ao criar nova gestação");
       }
     }
@@ -123,11 +143,14 @@ const gravidezResolver = {
         });
 
         await newGravidez.save();
-/*
+
         pubsub.publish('NOTIFICACAO_NOVO_REGISTRO', {
-          notificacaoNovoRegistro: newGravidez,
+          notificacaoNovoRegistro: {
+            mensagem: 'Novo registro de gravidez adicionado.',
+            usuarioId: usuarioId,
+          },
         });
-*/
+
         return newGravidez;
       } catch (err) {
         throw new GraphQLError('Erro ao criar dados de gravidez');
@@ -136,6 +159,18 @@ const gravidezResolver = {
   },
 };
 
+const gravidezMediaResolver = {
+  Query: {
+    gravidezMedia: async () => {
+      try {
+        return await GravidezMedia.find(); // Retorna todos os dados de gravidez média
+      } catch (err) {
+        throw new GraphQLError('Erro ao buscar gravidez média');
+      }
+    },
+  },
+};
+
 import { mergeResolvers } from '@graphql-tools/merge';
 
-export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver]);
+export const resolvers = mergeResolvers([userResolver, gestacaoResolver, gravidezResolver, gravidezMediaResolver]);
