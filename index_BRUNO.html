@@ -279,60 +279,89 @@
         document.getElementById('submitDataBtn').addEventListener('click', submitData)
 
         document.getElementById('submitCheckupBtn').addEventListener('click', async function() {
-            const userID = localStorage.getItem('userID');
-            const semana = parseInt(document.getElementById('semana').value)
-            const peso = parseFloat(document.getElementById('peso').value)
-            const comprimento = parseFloat(document.getElementById('comprimento').value)
-            const dataRegistro = new Date().toISOString();  // Captura a data e hora atuais
-            // Verificação dos valores dos inputs
-            if (!semana || !peso || !comprimento) {
-                console.error("Missing input values.");
-                alert("Preencha todos os valores.");
-                return;
+    const userID = localStorage.getItem('userID');
+    const semana = parseInt(document.getElementById('semana').value);
+    const peso = parseFloat(document.getElementById('peso').value);
+    const comprimento = parseFloat(document.getElementById('comprimento').value);
+    const dataRegistro = new Date().toISOString();  // Captura a data e hora atuais
+    // Verificação dos valores dos inputs
+    if (!semana || !peso || !comprimento) {
+        console.error("Missing input values.");
+        alert("Preencha todos os valores.");
+        return;
+    }
+    
+    // Buscar dados da gravidez média para a semana selecionada
+    const query = `
+        query {
+            gravidezMedia {
+                semana
+                peso
+                comprimento
+                facto
             }
-            const semanaData = dados.find(item => item.semana === semana);
+        }
+    `;
+    
+    const semanaData = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query })
+    })
+    .then(response => response.json())
+    .then(data => data.data.gravidezMedia)
+    .catch(error => {
+        console.error("Erro ao buscar dados da gravidez média:", error);
+        alert("Ocorreu um erro ao buscar os dados.");
+    });
+    
+    const semanaInfo = semanaData.find(item => item.semana === semana);
+    
+    if (semanaInfo) {
+        // Preencher valores médios com dados da semana selecionada
+        document.getElementById('semanaAvg').value = semanaInfo.semana;
+        document.getElementById('pesoAvg').value = semanaInfo.peso;
+        document.getElementById('comprimentoAvg').value = semanaInfo.comprimento;
+        document.getElementById('randomFact').innerHTML = semanaInfo.facto;
+    } else {
+        alert("Semana não encontrada.");
+    }
 
-            if (semanaData) {
-                // Preencher valores médios com dados da semana selecionada
-                document.getElementById('semanaAvg').value = semanaData.semana;
-                document.getElementById('pesoAvg').value = semanaData.peso;
-                document.getElementById('comprimentoAvg').value = semanaData.comprimento;
-                document.getElementById('randomFact').innerHTML = semanaData.facto;
-            } else {
-                alert("Semana não encontrada.");
+    const mutationQuery = `
+        mutation CreateGravidez($usuarioId: ID!, $semana: Int!, $peso: Float!, $comprimento: Float!, $dataRegistro: String!) {
+            createGravidez(usuarioId: $usuarioId, semana: $semana, peso: $peso, comprimento: $comprimento, dataRegistro: $dataRegistro) {
+                id
+                semana
+                peso
+                comprimento
+                dataRegistro
             }
-            const query = `
-                mutation CreateGravidez($usuarioId: ID!, $semana: Int!, $peso: Float!, $comprimento: Float!, $dataRegistro: String!) {
-                    createGravidez(usuarioId: $usuarioId, semana: $semana, peso: $peso, comprimento: $comprimento, dataRegistro: $dataRegistro) {
-                        id
-                        semana
-                        peso
-                        comprimento
-                        dataRegistro
-                    }
-                }
-            `;
-            
-            const variables = { usuarioId: userID, semana, peso, comprimento, dataRegistro };
-            try {
-                const response = await fetch('http://localhost:4000/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query, variables })
-                });
-
-                // Log para ver a resposta da API
-                const result = await response.json();
-            } catch (error) {
-                console.error("Error during the request:", error);
-                alert("An error occurred during the request.");
-            }
+        }
+    `;
+    
+    const variables = { usuarioId: userID, semana, peso, comprimento, dataRegistro };
+    try {
+        const response = await fetch('http://localhost:4000/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: mutationQuery, variables })
         });
 
+        // Log para ver a resposta da API
+        const result = await response.json();
+    } catch (error) {
+        console.error("Error during the request:", error);
+        alert("An error occurred during the request.");
+    }
+});
 
-        document.getElementById('showResultsBtn').addEventListener('click', function() {
+
+
+document.getElementById('showResultsBtn').addEventListener('click', function() {
     const resultsTableContainer = document.getElementById('resultsTableContainer');
     const resultsTableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
 
@@ -366,27 +395,50 @@
             body: JSON.stringify({ query, variables })
         })
         .then(response => response.json())
-        .then(data => {   
+        .then(data => {
             if (data.data && data.data.dadosGravidezPorUsuario) {
                 // Ordena os dados pelas semanas
                 data.data.dadosGravidezPorUsuario.sort((a, b) => a.semana - b.semana);
 
                 // Preencher a tabela com os resultados
-                data.data.dadosGravidezPorUsuario.forEach(item => {         
-                    const semanaData = dados.find(d => d.semana === item.semana);
-                    if (semanaData) {
-                        // Adicionar uma linha na tabela
-                        const row = resultsTableBody.insertRow();
-                        
-                        row.insertCell(0).innerText = item.semana;
-                        row.insertCell(1).innerText = item.peso;
-                        row.insertCell(2).innerText = item.comprimento;
-                        row.insertCell(3).innerText = semanaData.peso;
-                        row.insertCell(4).innerText = semanaData.comprimento;
-                        row.insertCell(5).innerText = semanaData.facto;
-                    } else {
-                        console.log('Sem dados para semana:', item.semana);  // Verifica se a semanaData não foi encontrada
-                    }
+                data.data.dadosGravidezPorUsuario.forEach(item => {
+                    // Buscar dados da gravidez média para a semana
+                    const queryGravidezMedia = `
+                        query {
+                            gravidezMedia {
+                                semana
+                                peso
+                                comprimento
+                                facto
+                            }
+                        }
+                    `;
+                    fetch('http://localhost:4000/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query: queryGravidezMedia })
+                    })
+                    .then(response => response.json())
+                    .then(gravidezMediaData => {
+                        const semanaData = gravidezMediaData.data.gravidezMedia.find(d => d.semana === item.semana);
+                        if (semanaData) {
+                            // Adicionar uma linha na tabela
+                            const row = resultsTableBody.insertRow();
+                            row.insertCell(0).innerText = item.semana;
+                            row.insertCell(1).innerText = item.peso;
+                            row.insertCell(2).innerText = item.comprimento;
+                            row.insertCell(3).innerText = semanaData.peso;
+                            row.insertCell(4).innerText = semanaData.comprimento;
+                            row.insertCell(5).innerText = semanaData.facto;
+                        } else {
+                            console.log('Sem dados para semana:', item.semana);  // Verifica se a semanaData não foi encontrada
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Erro ao buscar dados da gravidez média:", error);
+                    });
                 });
             } else {
                 console.log('Nenhum dado de gravidez encontrado no response');
@@ -401,6 +453,7 @@
         resultsTableContainer.style.display = 'none';
     }
 });
+
         checkLoginStatus();
     </script>
 </body>
