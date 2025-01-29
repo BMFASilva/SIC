@@ -51,7 +51,7 @@ const userResolver = {
           throw new GraphQLError('Usuário ou senha inválidos');
         }
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return { token };
+        return { token, user };
       } catch (err) {
         throw new GraphQLError('Erro ao realizar login');
       }
@@ -69,23 +69,34 @@ const gestacaoResolver = {
   Query: {
     gestacaoPorUsuario: async (_, { usuarioId }) => {
       try {
-        return await Gestacao.findOne({ usuarioId });
+          const gestacao = await Gestacao.findOne({ usuarioId: usuarioId });
+          return gestacao;
       } catch (err) {
-        throw new GraphQLError('Erro ao buscar informações de gestação');
+          console.error(err);
+          throw new Error('Erro ao buscar gestação');
       }
-    },
+  },
   },
 
   Mutation: {
     createGestacao: async (_, { usuarioId, ultimaMenstruacao }) => {
       try {
-        const gestacao = new Gestacao({ usuarioId, ultimaMenstruacao });
-        await gestacao.save();
+        const ultimaMenstruacaoDate = new Date(ultimaMenstruacao);
+        
+        const dataTerminoPrevisto = new Date(ultimaMenstruacaoDate);
+        dataTerminoPrevisto.setDate(ultimaMenstruacaoDate.getDate() + 280);
+        const gestacao = await Gestacao.create({
+          usuarioId,
+          ultimaMenstruacao: ultimaMenstruacaoDate,
+          dataTerminoPrevisto,
+        });
+    
         return gestacao;
-      } catch (err) {
-        throw new GraphQLError('Erro ao criar nova gestação');
+      } catch (error) {
+        console.error("Erro ao criar gestação:", error);
+        throw new Error("Erro ao criar nova gestação");
       }
-    },
+    }
   },
 };
 

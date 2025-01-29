@@ -23,6 +23,11 @@ export const typeDefs = gql`
     dataRegistro: String!
   }
 
+  type LoginResponse {
+    token: String!
+    user: User!
+}
+
   # Queries
   type Query {
     users: [User!]!
@@ -37,10 +42,6 @@ export const typeDefs = gql`
     login(username: String!, password: String!): LoginResponse!
     createGestacao(usuarioId: ID!, ultimaMenstruacao: String!): Gestacao!
     createGravidez(usuarioId: ID!, semana: Int!, peso: Float!, comprimento: Float!, dataRegistro: String!): Gravidez!
-  }
-
-  type LoginResponse {
-    token: String!
   }
 
   # Subscriptions

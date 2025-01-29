@@ -7,7 +7,7 @@ const gestacaoSchema = new mongoose.Schema({
     required: true,
   },
   ultimaMenstruacao: {
-    type: String,
+    type: Date,
     required: true,
   },
   dataTerminoPrevisto: {

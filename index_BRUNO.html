@@ -22,15 +22,31 @@
         </form>
         
         <p>Don't have an account? <a href="#" id="createAccountLink">Create one here</a>.</p>
+
+        <!-- Botão para mostrar informações -->
+        <button id="showInfoBtn" disabled>Show More Info</button>
+
+        <!-- Seção escondida inicialmente -->
+        <div id="extraInfo" style="display: none;">
+            <label for="ultimaMenstruacao">Última Menstruação:</label>
+            <input type="date" id="ultimaMenstruacao"><br><br>
+
+            <label>Data Término Previsto:</label>
+            <p id="dataTerminoPrevisto"></p>
+
+            <button id="submitDataBtn">Submit</button>
     </div>
 
     <script>
-        // Função para enviar o login para o backend
+        // Função para logar e armazenar token e userID
         async function login(username, password) {
             const query = `
                 mutation Login($username: String!, $password: String!) {
                     login(username: $username, password: $password) {
                         token
+                        user {
+                            id
+                        }
                     }
                 }
             `;
@@ -45,23 +61,22 @@
             });
 
             const result = await response.json();
-            return result;
-        }
-
-        // Função de login quando o formulário é enviado
-        document.getElementById('loginForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            const result = await login(username, password);
             if (result.data && result.data.login) {
-                alert('Login successful! Token: ' + result.data.login.token);
-                // Aqui, você pode redirecionar para outra página ou guardar o token no localStorage
+                localStorage.setItem('authToken', result.data.login.token);
+                localStorage.setItem('userID', result.data.login.user.id);  // Salva o userID no localStorage
+                alert('Login successful!');
+                checkLoginStatus();
             } else {
                 alert('Error: ' + result.errors[0].message);
             }
+        }
+
+        // Função de login no formulário
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            await login(username, password);
         });
 
         // Função para criar uma nova conta
@@ -85,24 +100,122 @@
             });
 
             const result = await response.json();
-            return result;
+            if (result.data && result.data.createUser) {
+                alert('Account created successfully!');
+            } else {
+                alert('Error creating account: ' + result.errors[0].message);
+            }
         }
 
-        // Lógica de redirecionamento ou exibição do formulário de criação de conta
+        // Redirecionamento para criar conta
         document.getElementById('createAccountLink').addEventListener('click', function() {
             const username = prompt('Enter your username:');
             const password = prompt('Enter your password:');
-            
             if (username && password) {
-                createAccount(username, password).then(result => {
-                    if (result.data && result.data.createUser) {
-                        alert('Account created successfully!');
-                    } else {
-                        alert('Error creating account: ' + result.errors[0].message);
-                    }
-                });
+                createAccount(username, password);
             }
         });
+
+        // Verifica se o usuário está logado
+        function checkLoginStatus() {
+            const token = localStorage.getItem('authToken');
+            const userID = localStorage.getItem('userID');
+            if (token && userID) {
+                document.getElementById('showInfoBtn').disabled = false;
+                document.getElementById('extraInfo').style.display = 'block';  // Exibe os campos
+            }
+        }
+
+        // Mostra a seção extra ao clicar no botão
+        document.getElementById('showInfoBtn').addEventListener('click', function() {
+    const extraInfo = document.getElementById('extraInfo');
+    // Verifica se o bloco está visível
+    if (extraInfo.style.display === 'block') {
+        extraInfo.style.display = 'none';  // Esconde o bloco
+    } else {
+        extraInfo.style.display = 'block';  // Exibe o bloco
+        fetchData();  // Carregar dados se disponíveis
+    }
+});
+
+        async function submitData() {
+    const userID = localStorage.getItem('userID');
+    const ultimaMenstruacao = document.getElementById('ultimaMenstruacao').value;
+    const dataFormatada = new Date(ultimaMenstruacao);
+    const isoData = dataFormatada.toISOString();  // Converte para ISO no formato UTC
+
+    const query = `
+        mutation CreateGestacao($usuarioId: ID!, $ultimaMenstruacao: String!) {
+            createGestacao(usuarioId: $usuarioId, ultimaMenstruacao: $ultimaMenstruacao) {
+                id
+                ultimaMenstruacao
+            }
+        }
+    `;
+
+    const variables = { usuarioId: userID, ultimaMenstruacao: isoData };
+
+    await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, variables })
+    });
+
+    // Após o envio, buscar a data prevista
+    fetchData();
+}
+
+
+        // Função para buscar dados de gestação
+        async function fetchData() {
+            const userID = localStorage.getItem('userID');
+
+            const query = `
+                query GetGestacao($usuarioId: ID!) {
+                    gestacaoPorUsuario(usuarioId: $usuarioId) {
+                        id
+                        ultimaMenstruacao
+                        dataTerminoPrevisto
+                    }
+                }
+            `;
+
+            const variables = { usuarioId: userID };
+
+            const response = await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query, variables })
+            });
+
+            const result = await response.json();
+            if (result.data && result.data.gestacaoPorUsuario) {
+                const dataTermino = result.data.gestacaoPorUsuario.dataTerminoPrevisto;
+                if (!isNaN(dataTermino)) {
+                    const data = new Date(parseInt(dataTermino));
+                    const dia = String(data.getDate()).padStart(2, '0');
+                    const mes = String(data.getMonth() + 1).padStart(2, '0');
+                    const ano = data.getFullYear();
+                    const formattedDate = `${dia}-${mes}-${ano}`;
+                    document.getElementById('dataTerminoPrevisto').innerText = formattedDate;
+                } else {
+                    console.error('Data inválida:', dataTermino);
+                    document.getElementById('dataTerminoPrevisto').innerText = "Data inválida.";
+                }
+            } else {
+                console.error("Erro ao buscar dados de gestação:", result.errors);
+                document.getElementById('dataTerminoPrevisto').innerText = "Erro ao carregar os dados.";
+            }
+        }
+
+        document.getElementById('submitDataBtn').addEventListener('click', submitData)
+
+        // Verifica login ao carregar a página
+        checkLoginStatus();
     </script>
 </body>
 </html>
