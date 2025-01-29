@@ -35,9 +35,45 @@
             <p id="dataTerminoPrevisto"></p>
 
             <button id="submitDataBtn">Submit</button>
+        </div>
+
+        <!-- Novo botão para Checkup da Semana -->
+        <button id="showCheckupFormBtn">Checkup da Semana</button>
+
+        <!-- Formulário de Checkup da Semana e Valores Médios juntos -->
+        <div id="checkupBlock" style="display: none;">
+            <!-- Formulário de Checkup da Semana -->
+            <h3>Checkup da Semana</h3>
+            <label for="semana">Semana:</label>
+            <input type="number" id="semana" required><br><br>
+
+            <label for="peso">Peso:</label>
+            <input type="number" id="peso" required><br><br>
+
+            <label for="comprimento">Comprimento:</label>
+            <input type="number" id="comprimento" required><br><br>
+
+            <button id="submitCheckupBtn">Ver Resultados</button>
+
+            <!-- Título para Valores Médios -->
+            <h3>Valores Médios</h3>
+
+            <!-- Inputs de Valores Médios (não editáveis) -->
+            <label for="semanaAvg">Semana:</label>
+            <input type="number" id="semanaAvg" readonly><br><br>
+
+            <label for="pesoAvg">Peso:</label>
+            <input type="number" id="pesoAvg" readonly><br><br>
+
+            <label for="comprimentoAvg">Comprimento:</label>
+            <input type="number" id="comprimentoAvg" readonly><br><br>
+            <h4>Facto</h3>
+            <p id="randomFact"></p>
+        </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { dados } from './data.js';  
         // Função para logar e armazenar token e userID
         async function login(username, password) {
             const query = `
@@ -137,36 +173,42 @@
         fetchData();  // Carregar dados se disponíveis
     }
 });
+        document.getElementById('showCheckupFormBtn').addEventListener('click', function() {
+                    const checkupBlock = document.getElementById('checkupBlock');
+                    if (checkupBlock.style.display === 'block') {
+                        checkupBlock.style.display = 'none';  // Esconde o bloco
+                    } else {
+                        checkupBlock.style.display = 'block';  // Exibe o bloco
+                    }
+                });
 
-        async function submitData() {
-    const userID = localStorage.getItem('userID');
-    const ultimaMenstruacao = document.getElementById('ultimaMenstruacao').value;
-    const dataFormatada = new Date(ultimaMenstruacao);
-    const isoData = dataFormatada.toISOString();  // Converte para ISO no formato UTC
+                async function submitData() {
+            const userID = localStorage.getItem('userID');
+            const ultimaMenstruacao = document.getElementById('ultimaMenstruacao').value;
+            const dataFormatada = new Date(ultimaMenstruacao);
+            const isoData = dataFormatada.toISOString();  // Converte para ISO no formato UTC
 
-    const query = `
-        mutation CreateGestacao($usuarioId: ID!, $ultimaMenstruacao: String!) {
-            createGestacao(usuarioId: $usuarioId, ultimaMenstruacao: $ultimaMenstruacao) {
-                id
-                ultimaMenstruacao
-            }
+            const query = `
+                mutation CreateGestacao($usuarioId: ID!, $ultimaMenstruacao: String!) {
+                    createGestacao(usuarioId: $usuarioId, ultimaMenstruacao: $ultimaMenstruacao) {
+                        id
+                        ultimaMenstruacao
+                    }
+                }
+            `;
+
+            const variables = { usuarioId: userID, ultimaMenstruacao: isoData };
+
+            await fetch('http://localhost:4000/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query, variables })
+            }); 
+        // Após o envio, buscar a data prevista
+            fetchData();
         }
-    `;
-
-    const variables = { usuarioId: userID, ultimaMenstruacao: isoData };
-
-    await fetch('http://localhost:4000/graphql', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query, variables })
-    });
-
-    // Após o envio, buscar a data prevista
-    fetchData();
-}
-
 
         // Função para buscar dados de gestação
         async function fetchData() {
@@ -213,6 +255,59 @@
         }
 
         document.getElementById('submitDataBtn').addEventListener('click', submitData)
+
+        document.getElementById('submitCheckupBtn').addEventListener('click', async function() {
+            const userID = localStorage.getItem('userID');
+            const semana = parseInt(document.getElementById('semana').value)
+            const peso = parseFloat(document.getElementById('peso').value)
+            const comprimento = parseFloat(document.getElementById('comprimento').value)
+            const dataRegistro = new Date().toISOString();  // Captura a data e hora atuais
+            // Verificação dos valores dos inputs
+            if (!semana || !peso || !comprimento) {
+                console.error("Missing input values.");
+                alert("Preencha todos os valores.");
+                return;
+            }
+            const semanaData = dados.find(item => item.semana === semana);
+
+            if (semanaData) {
+                // Preencher valores médios com dados da semana selecionada
+                document.getElementById('semanaAvg').value = semanaData.semana;
+                document.getElementById('pesoAvg').value = semanaData.peso;
+                document.getElementById('comprimentoAvg').value = semanaData.comprimento;
+                document.getElementById('randomFact').innerHTML = semanaData.facto;
+            } else {
+                alert("Semana não encontrada.");
+            }
+            const query = `
+                mutation CreateGravidez($usuarioId: ID!, $semana: Int!, $peso: Float!, $comprimento: Float!, $dataRegistro: String!) {
+                    createGravidez(usuarioId: $usuarioId, semana: $semana, peso: $peso, comprimento: $comprimento, dataRegistro: $dataRegistro) {
+                        id
+                        semana
+                        peso
+                        comprimento
+                        dataRegistro
+                    }
+                }
+            `;
+            
+            const variables = { usuarioId: userID, semana, peso, comprimento, dataRegistro };
+            try {
+                const response = await fetch('http://localhost:4000/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query, variables })
+                });
+
+                // Log para ver a resposta da API
+                const result = await response.json();
+            } catch (error) {
+                console.error("Error during the request:", error);
+                alert("An error occurred during the request.");
+            }
+        });
 
         // Verifica login ao carregar a página
         checkLoginStatus();

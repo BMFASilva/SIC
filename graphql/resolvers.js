@@ -123,11 +123,11 @@ const gravidezResolver = {
         });
 
         await newGravidez.save();
-
+/*
         pubsub.publish('NOTIFICACAO_NOVO_REGISTRO', {
           notificacaoNovoRegistro: newGravidez,
         });
-
+*/
         return newGravidez;
       } catch (err) {
         throw new GraphQLError('Erro ao criar dados de gravidez');
